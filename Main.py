@@ -22,11 +22,13 @@ LF = ("Verdana", 20, 'bold')
 
 MF = ("Verdana", 16)
 
+#Store numbers from RNG for coordinates
 x1 = []
 y1 = []
 x2 = []
 y2 = []
 
+#global variables for various updates
 a = int
 c = int
 j = int
@@ -39,6 +41,7 @@ z = int
 num1 = int
 num2 = int
 
+#For storing x and y data to separate for scoreboard
 j1 = []
 j2 = []
 j3 = []
@@ -47,6 +50,7 @@ j4 = []
 x11 = []
 x22 = []
 
+#For graphs
 f = Figure(figsize=(16,9), dpi=100)
 f1 = f.add_subplot(131)
 f2 = f.add_subplot(133)
@@ -64,7 +68,10 @@ class tkinterApp(tk.Tk):
         container.grid_columnconfigure(0, weight = 1)
         
         self.frames = {}
-        
+
+        #Page1 is for single player, Page1a is player 1 selection for multiplayer
+        #Page2 is player 2 selection, Page3 is animated graph page
+        #Page4 is the scoreboard
         for F in (StartPage, Page1, Page1a, Page2, Page3, Page4):
             
             frame = F(container, self)
@@ -84,13 +91,13 @@ class tkinterApp(tk.Tk):
         frame = self.frames[cont]
         frame.tkraise()
         x = 1
-        
+        #x determines if player 2 graph is on (x=2)
     def Multiplayer(self, cont):
         global x
         frame = self.frames[cont]
         frame.tkraise()
         x = 2
-        
+        #x determines if player 2 graph is on (x=2)
     def StartGraph(self, cont):
         global a, b, j, y, z, s
         frame = self.frames[cont]
@@ -101,12 +108,18 @@ class tkinterApp(tk.Tk):
         y = 1
         z = 0
         s = 0
-        
+        #sets global variables to new values when graph is started
+        #for speed
     def PauseAni(self, cont):
         global a, fig, t, x1, y1, x2, y2, x11, x22, j1, j2, j3, j4, t1
         frame = self.frames[cont]
         frame.tkraise()
         a = 1
+
+        #code below is used to determine player score
+        #x11/x22 is sorted by x values in player's range
+        #then sorted by y values in player's range
+        #the length is then taken which equals the score
         if num1 == 1:
             for x, y in zip(x1, y1):
                 x11.append([x,y])
@@ -177,7 +190,9 @@ class tkinterApp(tk.Tk):
         z = 1
         t = 0
         t1 = 0
-      
+        #resets all variables upon new game to eliminate bias
+        #and reset score
+ 
 class StartPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
@@ -185,12 +200,14 @@ class StartPage(tk.Frame):
         label = ttk.Label(self, text = "Start Game", font = LARGEFONT)
         
         label.grid(row = 0, column = 2, padx = 10, pady = 10)
-        
+
+        #goes to Page1
         button1 = tk.Button(self, text="Single Player",
         command = lambda: controller.Single_Player(Page1), background= "Red", height=26, width=37, font=LF)
         
         button1.grid(row = 1, column = 1, padx = 9, pady = 10)
-        
+
+        #goes to Page1a
         button2 = tk.Button(self, text="Multiplayer",
         command = lambda: controller.Multiplayer(Page1a), background = "Purple", height=26, width=37, font=LF, fg = "White")
         
@@ -216,7 +233,8 @@ class Page1(tk.Frame):
                           activestyle = 'dotbox',
                           font = ("Verdana", 18, 'bold'),
                           fg = "Red")
-        
+
+        #choices for Player in listbox equal to the displayed value
         listbox.insert(1, 1)
         listbox.insert(2, 2)
         listbox.insert(3, 3)
@@ -232,6 +250,8 @@ class Page1(tk.Frame):
 
         def selected_item():
             global num1
+            #num1 determines highlighted area of graph for player 1
+            
             for i in listbox.curselection():
                 a = listbox.get(i)
                 if a == 1:
@@ -247,7 +267,8 @@ class Page1(tk.Frame):
         command = selected_item, background="Red", font = ("Verdana", 16, 'bold'))
         
         button3.grid(row = 2, column = 1, padx = 100, pady = 100)
-        
+
+        #Area of Intent png left on RPi, will upload code for it
         image = Image.open("AreaofIntent.png")
         photo = ImageTk.PhotoImage(image.resize((500, 500), Image.ANTIALIAS))
         
@@ -350,6 +371,8 @@ class Page2(tk.Frame):
 
         def selected_item():
             global num2
+            #num2 determines highlighted area of graph for Player 2
+            
             for i in listbox.curselection():
                 a = listbox.get(i)
                 if a == 1:
@@ -373,31 +396,40 @@ class Page2(tk.Frame):
         label2.image = photo
         label2.grid(row = 2, column = 3, pady=100)
 
+#Graph function, very finicky
 def animate(i):
     global j, num1, num2, x, x1, x2, y, y1, y2, z, s, x11, x22
     if y == 1:
         if j < 30:
+            #only 30 loops due to speed issues
             if x == 1:
+                #singleplayer
                 if z == 0:
-                
+
+                    #reading from RNG
                     ser1 = serial.Serial('/dev/ttyACM0', 9600, 8, 'N', 1, timeout=1)
                     ser2 = serial.Serial('/dev/ttyACM1', 9600, 8, 'N', 1, timeout=1)
                 
                     output1 = ser1.read(1)
                     output2 = ser1.read(1)
-                    
+
+                    #displays data in 0 to 255
                     X1=int.from_bytes(output1,byteorder=sys.byteorder)
                     Y1=int.from_bytes(output2,byteorder=sys.byteorder)
-                    
+
+                    #adds data to array
                     x1.append(X1);
                     y1.append(Y1);
-                
+
+                #clear graphs. not sure why this is needed, but we
+                #could not make it work without it
                 f1.cla()
                 f2.cla()
                 
                 f1.axis([0, 255, 0, 255])
                 f2.axis([0, 255, 0, 255])
-                
+
+                #highlight chosen area of graph
                 if num1==1:
                     f1.axvspan(0, 127, ymin=0.5, ymax=1, color='red', alpha=0.125)
                     f1.axhspan(128, 255, xmin=0, xmax=0.5, color='red', alpha=0.125)
@@ -410,7 +442,8 @@ def animate(i):
                 if num1==4:
                     f1.axvspan(128, 255, ymin=0, ymax=0.5, color='red', alpha=0.125)
                     f1.axhspan(0, 127, xmin=0.5, xmax=1, color='red', alpha=0.125)
-                
+
+                #plot data for singleplayer
                 f1.plot(x1, y1, 'or:')
                 
             elif x == 2:
@@ -465,7 +498,8 @@ def animate(i):
                 if num2==4:
                     f2.axvspan(128, 255, ymin=0, ymax=0.5, color='blue', alpha=0.125)
                     f2.axhspan(0, 127, xmin=0.5, xmax=1, color='blue', alpha=0.125)
-                
+
+                #plot data for multiplayer
                 f1.plot(x1, y1, 'or:')
                 f2.plot(x2, y2, 'xb-')
                 
@@ -476,10 +510,12 @@ class Page3(tk.Frame):
     def __init__(self, parent, controller):
         
         tk.Frame.__init__(self, parent)
-        
+
+        #display graph on this page
         canvas = FigureCanvasTkAgg(f, master=self)
         canvas.get_tk_widget().grid(padx = 150, pady=20)
-        
+
+        #graph will stop and players will press this to proceed
         button2 = tk.Button(self, text="Please wait until graph is finished and then press this button to proceed",
         command = lambda: controller.PauseAni(Page4), font = ("Verdana", 16, 'bold'), bg="Purple", fg="White", height=5, width=100)
         
@@ -487,9 +523,11 @@ class Page3(tk.Frame):
 
 class Page4(tk.Frame):
     def __init__(self, parent, controller):
-        
+        #int_var and int_var1 global due to not knowing how else to reset
+        #them each game
         global int_var, int_var1
-        
+
+        #shows number of coordinates that landed in chosen area
         def results():
             global t, t1, int_var, int_var1
             int_var.set(int(t))
@@ -506,7 +544,8 @@ class Page4(tk.Frame):
         label = ttk.Label(self, text = "Results Page", font = LARGEFONT)
         
         label.grid(row = 0, column = 1)
-        
+
+        #starts new game and clears all variables
         button1 = tk.Button(self, text="New Game",
         command = lambda: controller.ResetGraph(StartPage), font = MF, bg = "Orange", fg = "Black", height = 5, width = 20)
         
@@ -529,7 +568,8 @@ class Page4(tk.Frame):
         
         label2 = tk.Label(self, text = "Out of 30 points", font = LARGEFONT)
         label2.grid(row = 3, column = 2, padx = 10, pady = 50)
-        
+
+        #shows scores
         button3 = tk.Button(self, text="Click me to see how you did!",
         command = results, bg="Orange", fg="Black", font = MF, height = 5, width = 22)
         
@@ -537,8 +577,10 @@ class Page4(tk.Frame):
 
         
 app = tkinterApp()
+#animates the graph
 ani = FuncAnimation(f, animate, interval=300, blit=False)
 
+#not entirely sure if these work as intended
 if a == 0:
     ani.resume()
 if a == 1:
